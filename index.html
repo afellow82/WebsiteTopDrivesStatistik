@@ -351,6 +351,7 @@
     .legend-item i { width: 11px; height: 11px; border-radius: 3px; display: inline-block; }
     @media (max-width: 560px) { .chart-card { padding: 16px 12px 12px; } }
     .link-line { margin: 0; font-size: 15px; color: var(--text); }
+    .link-line + .link-line { margin-top: 12px; }
     .link-line a { color: var(--blue-light); text-decoration: underline; text-underline-offset: 3px; }
     .link-line a:hover { filter: brightness(1.2); }
     /* ===== Login, Abmelden, Statusmeldungen ===== */
@@ -542,6 +543,34 @@
     }
     input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
     .stat-placeholder { margin-top: 22px; }
+    /* ===== Notizen ===== */
+    textarea {
+      width: 100%;
+      min-height: 96px;
+      padding: 10px 12px;
+      border: 1px solid #3a4c62;
+      border-radius: 8px;
+      background: #0e1723;
+      color: var(--text);
+      font: inherit;
+      font-size: 14px;
+      line-height: 1.5;
+      resize: vertical;
+      outline: none;
+    }
+    textarea::placeholder { color: #6f8298; }
+    textarea:focus { border-color: var(--blue-light); box-shadow: 0 0 0 3px rgba(86,183,255,.12); }
+    .notiz-form { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 24px; }
+    .notiz-form textarea { flex: 1 1 auto; min-width: 0; }
+    .add-button { flex: 0 0 auto; min-width: 0; width: 44px; padding: 0; font-size: 24px; line-height: 1; }
+    .notiz-form .form-message { margin: 0 0 12px; }
+    #page-notizen .data-table td { white-space: pre-wrap; vertical-align: top; text-align: left; }
+    #page-notizen .data-table th { text-align: left; }
+    #page-notizen .data-table td:first-child { white-space: nowrap; color: var(--muted); }
+    #page-notizen .data-table th.col-actions, #page-notizen .data-table td:last-child { width: 90px; }
+    #page-notizen .data-table td:last-child { white-space: nowrap; }
+    #page-notizen .data-table td { overflow-wrap: anywhere; }
+    @media (max-width: 560px) { .notiz-form { gap: 8px; } }
     .save-row {
       display: flex;
       justify-content: flex-end;
@@ -600,6 +629,7 @@
         <button class="tab" type="button" data-tab="garage" role="tab" aria-selected="false">Garage</button>
         <button class="tab" type="button" data-tab="legendaries" role="tab" aria-selected="false">Legendaries</button>
         <button class="tab" type="button" data-tab="weiteres" role="tab" aria-selected="false">Weiteres</button>
+        <button class="tab" type="button" data-tab="notizen" role="tab" aria-selected="false">Notizen</button>
       </nav>
     </div>
   </header>
@@ -844,7 +874,32 @@
     </section>
 
     <section id="page-weiteres" class="page" hidden>
-      <p class="link-line"><a href="https://www.topdrivesrecords.com/c" target="_blank" rel="noopener noreferrer">Cheatsheet von www.topdrivesrecords.com</a></p>
+      <p class="link-line"><a href="https://www.topdrivesrecords.com/c" target="_blank" rel="noopener noreferrer">Cheatsheet</a></p>
+      <p class="link-line"><a href="https://store.topdrives.io/de-DE" target="_blank" rel="noopener noreferrer">Hutch Webstore</a></p>
+    </section>
+
+    <section id="page-notizen" class="page" hidden>
+      <form class="notiz-form" id="notiz-form" novalidate>
+        <label for="notiz-eingabe" class="sr-only">Neue Notiz</label>
+        <textarea id="notiz-eingabe" placeholder="Neue Notiz …" rows="3"></textarea>
+        <button id="notiz-hinzufuegen" class="save-button add-button" type="submit" title="Notiz hinzufügen" aria-label="Notiz hinzufügen">+</button>
+      </form>
+      <p class="form-message" id="notiz-meldung" role="status"></p>
+
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th scope="col">Datum</th>
+              <th scope="col">Notiz</th>
+              <th scope="col" class="col-actions"><span class="sr-only">Aktionen</span></th>
+            </tr>
+          </thead>
+          <tbody id="notizen-tabelle">
+            <tr><td class="table-empty" colspan="3">Noch keine Daten</td></tr>
+          </tbody>
+        </table>
+      </div>
     </section>
     </div>
   </main>
@@ -907,6 +962,19 @@
     </form>
   </dialog>
 
+  <dialog id="dialog-notiz" class="dialog" aria-labelledby="dialog-notiz-titel">
+    <form id="notiz-aendern-form" novalidate>
+      <h2 id="dialog-notiz-titel" class="dialog-title">Notiz ändern</h2>
+      <label for="notiz-aendern-text" class="sr-only">Notiz</label>
+      <textarea id="notiz-aendern-text" rows="6" placeholder="Notiz"></textarea>
+      <p class="form-message" id="dialog-notiz-meldung" role="status"></p>
+      <div class="dialog-actions">
+        <button type="button" class="btn-secondary" id="notiz-abbrechen">Abbrechen</button>
+        <button type="submit" class="save-button" id="notiz-speichern">Speichern</button>
+      </div>
+    </form>
+  </dialog>
+
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.58.0/dist/umd/supabase.js" integrity="sha384-KX6Y/AMIv9qA8TLCDul2JatZWeyrJVgj3Xu/0r30Nr05xO8md1+wHAgtdsRV9LoE" crossorigin="anonymous"></script>
   <script>
     // Navigation zwischen den fünf Haupt-Tabs
@@ -933,6 +1001,7 @@
         }
         if (selected === 'gold' && typeof ladeGold === 'function') ladeGold();
         if (selected === 'legendaries' && typeof ladeLegendaries === 'function') ladeLegendaries();
+        if (selected === 'notizen' && typeof ladeNotizen === 'function') ladeNotizen();
       });
     });
 
@@ -1373,7 +1442,7 @@
     let loeschTabelle = 'gold'; // Tabelle, aus der der Eintrag im Lösch-Dialog entfernt wird
 
     function beschreibeEintrag(eintrag) {
-      return `Eintrag vom ${zeitFormat.format(new Date(eintrag.zeitpunkt))} (Stand ${zahlFormat.format(eintrag.stand)})`;
+      return `Eintrag vom ${zeitFormat.format(new Date(eintrag.zeitpunkt))} (Stand: ${zahlFormat.format(eintrag.stand)})`;
     }
 
     goldTabelle.addEventListener('click', (event) => {
@@ -1415,6 +1484,7 @@
       dialogLoeschen.close();
       if (loeschTabelle === 'garage') ladeGarage();
       else if (loeschTabelle === 'legendaries') ladeLegendaries();
+      else if (loeschTabelle === 'notizen') ladeNotizen();
       else ladeGold();
     });
 
@@ -1428,7 +1498,7 @@
       loeschTabelle = 'garage';
       const art = eintrag.voll_verbessert ? 'Voll verbessert' : 'Alle';
       document.getElementById('dialog-loeschen-text').textContent =
-        `Eintrag vom ${zeitFormat.format(new Date(eintrag.zeitpunkt))} (${art}, Gesamt ${zahlFormat.format(garageSumme(eintrag))}) wird endgültig gelöscht. Das kann nicht rückgängig gemacht werden.`;
+        `Eintrag vom ${zeitFormat.format(new Date(eintrag.zeitpunkt))} (${art}) wird endgültig gelöscht. Das kann nicht rückgängig gemacht werden.`;
       zeigeMeldung(loeschenMeldung, '');
       loeschenButton.disabled = false;
       dialogLoeschen.showModal();
@@ -1601,6 +1671,108 @@
       ladeLegendaries();
     });
 
+    // --- Notizen: laden, hinzufügen, ändern und löschen ---
+    let notizDaten = [];
+    const notizTabelle = document.getElementById('notizen-tabelle');
+    const notizMeldung = document.getElementById('notiz-meldung');
+    const notizEingabe = document.getElementById('notiz-eingabe');
+    const notizHinzufuegen = document.getElementById('notiz-hinzufuegen');
+    const dialogNotiz = document.getElementById('dialog-notiz');
+    const notizAendernText = document.getElementById('notiz-aendern-text');
+    const notizAendernMeldung = document.getElementById('dialog-notiz-meldung');
+    const notizSpeichern = document.getElementById('notiz-speichern');
+    const datumFormat = new Intl.DateTimeFormat('de-DE', { timeZone: 'Europe/Berlin', day: '2-digit', month: '2-digit', year: 'numeric' });
+
+    function zeichneNotizen() {
+      if (!notizDaten.length) { tabellenHinweis(notizTabelle, 3, 'Noch keine Daten'); return; }
+      notizTabelle.replaceChildren();
+      notizDaten.forEach((eintrag) => {
+        const tr = document.createElement('tr');
+        tr.dataset.id = eintrag.id;
+        [datumFormat.format(new Date(eintrag.zeitpunkt)), eintrag.text].forEach((text) => {
+          const td = document.createElement('td');
+          td.textContent = text;
+          tr.appendChild(td);
+        });
+        const aktionen = document.createElement('td');
+        aktionen.innerHTML =
+          '<div class="row-actions">' +
+            '<button type="button" class="icon-button" data-aktion="aendern" title="Notiz ändern" aria-label="Notiz ändern">' + ICON_AENDERN + '</button>' +
+            '<button type="button" class="icon-button danger" data-aktion="loeschen" title="Notiz löschen" aria-label="Notiz löschen">' + ICON_LOESCHEN + '</button>' +
+          '</div>';
+        tr.appendChild(aktionen);
+        notizTabelle.appendChild(tr);
+      });
+    }
+
+    async function ladeNotizen() {
+      if (!db) return;
+      const { data, error } = await db.from('notizen')
+        .select('id, zeitpunkt, text')
+        .order('zeitpunkt', { ascending: false })
+        .order('id', { ascending: false });
+      if (error) {
+        tabellenHinweis(notizTabelle, 3, 'Daten konnten nicht geladen werden.');
+        return;
+      }
+      notizDaten = data;
+      zeichneNotizen();
+    }
+
+    document.getElementById('notiz-form').addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const text = notizEingabe.value.trim();
+      if (!text) { zeigeMeldung(notizMeldung, 'Bitte eine Notiz eingeben.', 'error'); return; }
+      notizHinzufuegen.disabled = true;
+      const { error } = await db.from('notizen').insert({ text });
+      notizHinzufuegen.disabled = false;
+      if (error) { zeigeMeldung(notizMeldung, 'Speichern fehlgeschlagen. Bitte erneut versuchen.', 'error'); return; }
+      notizEingabe.value = '';
+      zeigeMeldung(notizMeldung, '');
+      ladeNotizen();
+    });
+
+    notizTabelle.addEventListener('click', (event) => {
+      const knopf = event.target.closest('button[data-aktion]');
+      if (!knopf) return;
+      const eintrag = notizDaten.find((e) => String(e.id) === knopf.closest('tr').dataset.id);
+      if (!eintrag) return;
+      aktuellerEintrag = eintrag;
+
+      if (knopf.dataset.aktion === 'loeschen') {
+        loeschTabelle = 'notizen';
+        document.getElementById('dialog-loeschen-text').textContent =
+          `Die Notiz vom ${datumFormat.format(new Date(eintrag.zeitpunkt))} wird endgültig gelöscht. Das kann nicht rückgängig gemacht werden.`;
+        zeigeMeldung(loeschenMeldung, '');
+        loeschenButton.disabled = false;
+        dialogLoeschen.showModal();
+      } else {
+        notizAendernText.value = eintrag.text;
+        zeigeMeldung(notizAendernMeldung, '');
+        notizSpeichern.disabled = false;
+        dialogNotiz.showModal();
+        notizAendernText.focus();
+      }
+    });
+
+    document.getElementById('notiz-abbrechen').addEventListener('click', () => dialogNotiz.close());
+
+    document.getElementById('notiz-aendern-form').addEventListener('submit', async (event) => {
+      event.preventDefault();
+      if (!aktuellerEintrag) return;
+      const text = notizAendernText.value.trim();
+      if (!text) { zeigeMeldung(notizAendernMeldung, 'Bitte eine Notiz eingeben.', 'error'); return; }
+      notizSpeichern.disabled = true;
+      const { data, error } = await db.from('notizen').update({ text }).eq('id', aktuellerEintrag.id).select('id');
+      if (error || !data || !data.length) {
+        notizSpeichern.disabled = false;
+        zeigeMeldung(notizAendernMeldung, 'Speichern fehlgeschlagen. Bitte erneut versuchen.', 'error');
+        return;
+      }
+      dialogNotiz.close();
+      ladeNotizen();
+    });
+
     // --- Speichern ---
     // Gold: ein Feld (Stand); Garage: acht Felder plus Kennzeichen "Voll verbessert"
     const GARAGE_FELDER = [
@@ -1734,7 +1906,7 @@
         zeigeAnsicht(Boolean(sitzung));
         if (sitzung) {
           // Aufruf verzögert, damit innerhalb des Auth-Callbacks keine weiteren Auth-Aufrufe blockieren
-          setTimeout(() => { ladeGold(); ladeGarage(); ladeLegendaries(); }, 0);
+          setTimeout(() => { ladeGold(); ladeGarage(); ladeLegendaries(); ladeNotizen(); }, 0);
         } else {
           goldDaten = [];
           zeichneGoldTabelle();
@@ -1742,6 +1914,8 @@
           zeichneGarage();
           legendaryDaten = [];
           zeichneLegendaries();
+          notizDaten = [];
+          zeichneNotizen();
         }
       });
     } else {
