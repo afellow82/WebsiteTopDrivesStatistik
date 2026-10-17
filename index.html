@@ -613,7 +613,7 @@
           </button>
           <div id="menu-liste" class="menu-liste" role="menu" hidden>
             <button id="logout-button" class="menu-item" type="button" role="menuitem" hidden>Abmelden</button>
-            <div class="menu-version" role="presentation">Version 1.02 (17.10.2026)</div>
+            <div class="menu-version" role="presentation">Version 1.03 (17.10.2026)</div>
           </div>
         </div>
       </div>
@@ -1129,6 +1129,7 @@
     goldZiel.addEventListener('input', () => {
       goldZielAnzeige.textContent = goldZiel.value;
       berechneGoldKennzahlen();
+      merkeAuswahl();
     });
 
     // Garage: Bei „Voll verbessert“ gibt es keine offenen Plätze.
@@ -1312,6 +1313,7 @@
     }
 
     function zeichneGoldTabelle() {
+      merkeAuswahl();
       berechneGoldKennzahlen();
       if (!goldDaten.length) { tabellenHinweis(goldTabelle, 4, 'Noch keine Daten'); return; }
       const zeilen = goldFenster();
@@ -1379,6 +1381,7 @@
     }
 
     function zeichneGarage() {
+      merkeAuswahl();
       const zeilen = garageFenster();
 
       // Kachel "Gesamt": Summe des neuesten Eintrags
@@ -1662,6 +1665,7 @@
     }
 
     function zeichneLegendaries() {
+      merkeAuswahl();
       const zeilen = legendaryFenster();
 
       // Dubletten: pro Fahrzeug zählt der älteste Eintrag (nach Tag im Spiel) als Original, alle späteren als Dublette
@@ -2021,6 +2025,39 @@
     document.querySelectorAll('.selection-tile').forEach((kachel) => {
       kachel.addEventListener('click', () => zeigeMeldung(speicherMeldung, ''));
     });
+
+    // --- Zuletzt gewählte Ansichten und Zielwert lokal im Browser merken ---
+    const AUSWAHL_SCHLUESSEL = 'td-auswahl';
+
+    function merkeAuswahl() {
+      const aktiv = (id) => {
+        const kachel = document.querySelector(`#${id} .choice-tile.active`);
+        return kachel ? kachel.dataset.value : null;
+      };
+      try {
+        localStorage.setItem(AUSWAHL_SCHLUESSEL, JSON.stringify({
+          goldZeitraum: aktiv('gold-zeitraum'),
+          garageAnsicht: aktiv('garage-ansicht'),
+          legendariesBesitzer: aktiv('legendaries-besitzer'),
+          goldZiel: goldZiel.value
+        }));
+      } catch (fehler) { /* Speicher nicht verfügbar (z. B. privater Modus): nichts merken */ }
+    }
+
+    (function stelleAuswahlWiederHer() {
+      let gemerkt = {};
+      try { gemerkt = JSON.parse(localStorage.getItem(AUSWAHL_SCHLUESSEL)) || {}; } catch (fehler) { /* ungültig: Standardwerte */ }
+      const setze = (id, wert) => {
+        if (wert && document.querySelector(`#${id} .choice-tile[data-value="${wert}"]`)) waehleKachel(id, wert);
+      };
+      setze('gold-zeitraum', gemerkt.goldZeitraum);
+      setze('garage-ansicht', gemerkt.garageAnsicht);
+      setze('legendaries-besitzer', gemerkt.legendariesBesitzer);
+      if (gemerkt.goldZiel !== undefined && gemerkt.goldZiel !== null && gemerkt.goldZiel !== '') {
+        goldZiel.value = gemerkt.goldZiel;
+        goldZielAnzeige.textContent = goldZiel.value;
+      }
+    })();
 
     // --- Start: Sitzung prüfen und auf An-/Abmeldung reagieren ---
     if (db) {
