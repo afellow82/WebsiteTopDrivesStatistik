@@ -323,6 +323,7 @@
     .target-value { flex: 0 0 auto; min-width: 46px; text-align: right; font-size: 16px; font-weight: 800; color: var(--blue-light); }
     .range { flex: 1 1 auto; min-width: 0; height: 24px; margin: 0; padding: 0; background: transparent; accent-color: var(--blue); cursor: pointer; }
     .table-last { margin-top: 24px; }
+    .chart-card.table-last { margin-bottom: 24px; }
     .stat-grid.cols-2.spaced, .stat-grid.cols-3.spaced, .stat-grid.cols-4.spaced { margin-bottom: 24px; }
     .stat-grid.cols-1 { grid-template-columns: minmax(0, 1fr); margin-bottom: 24px; }
     .chart-card {
@@ -613,7 +614,7 @@
           </button>
           <div id="menu-liste" class="menu-liste" role="menu" hidden>
             <button id="logout-button" class="menu-item" type="button" role="menuitem" hidden>Abmelden</button>
-            <div class="menu-version" role="presentation">Version 1.03 (17.10.2026)</div>
+            <div class="menu-version" role="presentation">Version 1.04 (17.10.2026)</div>
           </div>
         </div>
       </div>
@@ -782,7 +783,17 @@
         <div class="stat-card large"><span class="stat-label">Voraussichtliche Restzeit (Tage)</span><span class="stat-value" id="kachel-rest-d">–</span></div>
       </div>
 
-      <div class="table-wrap table-last">
+      <div class="chart-card table-last">
+        <div class="chart-head"><span class="chart-title">Goldverlauf</span></div>
+        <div id="gold-chart" class="chart-area" role="img" aria-label="Liniendiagramm des Goldverlaufs mit genutztem Gold"></div>
+        <div class="chart-legend">
+          <span class="legend-item"><i style="background:var(--blue-light)"></i>Stand</span>
+          <span class="legend-item"><i style="background:#ff7b7b"></i>Genutzt</span>
+          <span class="legend-item"><i style="background:var(--gold)"></i>Zielwert</span>
+        </div>
+      </div>
+
+      <div class="table-wrap">
         <table class="data-table">
           <thead>
             <tr><th scope="col">Zeitpunkt</th><th scope="col">Stand</th><th scope="col">Genutzt</th><th scope="col" class="col-actions"><span class="sr-only">Aktionen</span></th></tr>
@@ -1008,7 +1019,10 @@
           zeichneGarageChart();
           if (typeof ladeGarage === 'function') ladeGarage();
         }
-        if (selected === 'gold' && typeof ladeGold === 'function') ladeGold();
+        if (selected === 'gold') {
+          if (typeof zeichneGoldChart === 'function') zeichneGoldChart();
+          if (typeof ladeGold === 'function') ladeGold();
+        }
         if (selected === 'legendaries') {
           if (typeof zeichneLegendaryZeitstrahl === 'function') zeichneLegendaryZeitstrahl();
           if (typeof ladeLegendaries === 'function') ladeLegendaries();
@@ -1129,6 +1143,7 @@
     goldZiel.addEventListener('input', () => {
       goldZielAnzeige.textContent = goldZiel.value;
       berechneGoldKennzahlen();
+      zeichneGoldChart();
       merkeAuswahl();
     });
 
@@ -1312,9 +1327,78 @@
       setzeKachel('kachel-ziel-prozent', prozent, dezimal1);
     }
 
+    // Goldverlauf: Linie des Stands über die Zeit; "Genutzt" als senkrechte Linie nach unten ab dem jeweiligen Stand
+    function zeichneGoldChart() {
+      const box = document.getElementById('gold-chart');
+      const breite = box.clientWidth;
+      if (!breite) return; // Tab ist gerade nicht sichtbar
+
+      const daten = goldFenster().slice().reverse(); // älteste zuerst
+      if (daten.length < 2) {
+        box.innerHTML = '<p class="chart-empty">' + (daten.length ? 'Für das Diagramm werden mindestens zwei Einträge benötigt.' : 'Noch keine Daten') + '</p>';
+        return;
+      }
+
+      const ziel = Number(goldZiel.value);
+      const hoehe = breite < 560 ? 240 : 320;
+      const m = { l: 46, r: 12, t: 12, b: 26 };
+      const zeiten = daten.map((e) => new Date(e.zeitpunkt).getTime());
+      const tMin = zeiten[0];
+      const spanne = zeiten[zeiten.length - 1] - tMin || 1;
+      // Genutztes Gold eines Eintrags wird am nächsten Punkt (eine Position weiter rechts) nach oben abgetragen
+      const balkenOben = daten.map((e, i) => e.stand + (i ? (daten[i - 1].genutzt || 0) : 0));
+      const hoechst = Math.max(...balkenOben, ziel, 1);
+      const roh = hoechst / 5;
+      const basis = Math.pow(10, Math.floor(Math.log10(roh)));
+      const schritt = [1, 2, 5, 10].map((f) => f * basis).find((s) => s >= roh) || basis * 10;
+      const yMax = Math.ceil(hoechst / schritt) * schritt;
+      const x = (t) => m.l + ((t - tMin) / spanne) * (breite - m.l - m.r);
+      const y = (v) => hoehe - m.b - (v / yMax) * (hoehe - m.t - m.b);
+
+      let svg = `<svg viewBox="0 0 ${breite} ${hoehe}" width="${breite}" height="${hoehe}" xmlns="http://www.w3.org/2000/svg">`;
+
+      for (let v = 0; v <= yMax; v += schritt) {
+        svg += `<line x1="${m.l}" x2="${breite - m.r}" y1="${y(v)}" y2="${y(v)}" stroke="#2c3b4f" stroke-width="1"/>`;
+        svg += `<text x="${m.l - 8}" y="${y(v) + 4}" text-anchor="end" font-size="11" fill="#9eafc3">${ganzzahl.format(v)}</text>`;
+      }
+
+      // Zielwert als gestrichelte Linie
+      if (ziel > 0) {
+        svg += `<line x1="${m.l}" x2="${breite - m.r}" y1="${y(ziel)}" y2="${y(ziel)}" stroke="var(--gold)" stroke-width="1.5" stroke-dasharray="6 4"/>`;
+      }
+
+      // Genutztes Gold: ab dem Punkt des nächsten Eintrags senkrecht nach oben
+      daten.forEach((e, i) => {
+        if (!i || !daten[i - 1].genutzt) return;
+        const px = x(zeiten[i]).toFixed(1);
+        svg += `<line x1="${px}" x2="${px}" y1="${y(e.stand).toFixed(1)}" y2="${y(balkenOben[i]).toFixed(1)}" stroke="#ff7b7b" stroke-width="3" stroke-linecap="round"/>`;
+      });
+
+      const linie = daten.map((e, i) => `${i ? 'L' : 'M'}${x(zeiten[i]).toFixed(1)},${y(e.stand).toFixed(1)}`).join(' ');
+      svg += `<path d="${linie}" fill="none" stroke="var(--blue-light)" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>`;
+
+      // Punkte mit Hinweistext (Zeitpunkt, Stand, Genutzt)
+      daten.forEach((e, i) => {
+        const hinweis = `${zeitFormat.format(new Date(e.zeitpunkt))}: Stand ${zahlFormat.format(e.stand)}` + (i && daten[i - 1].genutzt ? `, davor genutzt ${zahlFormat.format(daten[i - 1].genutzt)}` : '');
+        svg += `<circle cx="${x(zeiten[i]).toFixed(1)}" cy="${y(e.stand).toFixed(1)}" r="5" fill="var(--blue-light)" stroke="#151f2d" stroke-width="1.5"><title>${hinweis}</title></circle>`;
+      });
+
+      const marken = breite < 560 ? 3 : 6;
+      const datumKurz = new Intl.DateTimeFormat('de-DE', { timeZone: 'Europe/Berlin', day: '2-digit', month: '2-digit', year: '2-digit' });
+      for (let i = 0; i < marken; i++) {
+        const t = tMin + (spanne * i) / (marken - 1);
+        const anker = i === 0 ? 'start' : (i === marken - 1 ? 'end' : 'middle');
+        svg += `<text x="${x(t)}" y="${hoehe - 8}" text-anchor="${anker}" font-size="11" fill="#9eafc3">${datumKurz.format(new Date(t))}</text>`;
+      }
+      svg += '</svg>';
+      box.innerHTML = svg;
+    }
+    window.addEventListener('resize', zeichneGoldChart);
+
     function zeichneGoldTabelle() {
       merkeAuswahl();
       berechneGoldKennzahlen();
+      zeichneGoldChart();
       if (!goldDaten.length) { tabellenHinweis(goldTabelle, 4, 'Noch keine Daten'); return; }
       const zeilen = goldFenster();
 
