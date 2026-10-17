@@ -345,6 +345,15 @@
     }
     .chart-area { width: 100%; }
     .chart-empty { display: grid; place-items: center; min-height: 180px; margin: 0; color: var(--muted); font-size: 14px; text-align: center; }
+    #leg-zeitstrahl .chart-empty { min-height: 90px; }
+    .verteilung-row { display: grid; grid-template-columns: 64px minmax(0, 1fr) 32px; align-items: center; gap: 10px; margin-bottom: 8px; font-size: 13px; }
+    .verteilung-row:last-child { margin-bottom: 0; }
+    .verteilung-label { color: var(--muted); }
+    .verteilung-bar { height: 14px; border-radius: 4px; background: #0e1723; overflow: hidden; }
+    .verteilung-bar > i { display: block; height: 100%; border-radius: 4px; background: var(--blue-light); }
+    .verteilung-count { text-align: right; font-weight: 700; color: var(--text); }
+    .chart-legend .legend-item i.auto-legende { width: auto; height: auto; border-radius: 0; background: none; }
+    .chart-legend .legend-item i.auto-legende svg { display: block; }
     .chart-area svg { display: block; width: 100%; height: auto; overflow: visible; }
     .chart-legend { display: flex; flex-wrap: wrap; gap: 8px 16px; margin-top: 12px; font-size: 12px; color: var(--muted); }
     .legend-item { display: inline-flex; align-items: center; gap: 6px; }
@@ -356,69 +365,52 @@
     .link-line a:hover { filter: brightness(1.2); }
     /* ===== Login, Abmelden, Statusmeldungen ===== */
     .brand-tools { position: relative; align-self: stretch; display: flex; align-items: center; margin-left: auto; }
-    .info-badge {
+    .menu-button {
       appearance: none;
-      position: absolute;
-      top: calc(100% + 4px);
-      right: 0;
       display: grid;
       place-items: center;
-      width: 14px;
-      height: 14px;
+      width: 36px;
+      height: 36px;
       padding: 0;
-      border: 1px solid #52718f;
-      border-radius: 50%;
-      background: transparent;
-      color: var(--muted);
-      font: inherit;
-      font-size: 10px;
-      font-weight: 650;
-      font-style: normal;
-      letter-spacing: 0;
-      line-height: 1;
-      cursor: help;
-    }
-    .info-badge > svg { display: block; }
-    .info-badge:hover, .info-badge:focus-visible { color: var(--text); border-color: var(--blue-light); outline: none; }
-    .info-bubble {
-      position: absolute;
-      top: calc(100% + 8px);
-      right: 0;
-      z-index: 20;
-      width: max-content;
-      padding: 9px 12px;
-      border: 1px solid var(--line);
-      border-radius: 9px;
-      background: var(--panel-2);
-      box-shadow: 0 10px 30px rgba(0,0,0,.4);
-      color: var(--text);
-      font-size: 12px;
-      font-style: normal;
-      font-weight: 400;
-      line-height: 1.5;
-      text-align: left;
-      white-space: nowrap;
-      opacity: 0;
-      visibility: hidden;
-      pointer-events: none;
-      transition: opacity .12s ease;
-    }
-    .info-bubble strong { font-weight: 700; }
-    .info-badge:hover .info-bubble, .info-badge:focus-visible .info-bubble, .info-badge:focus .info-bubble { opacity: 1; visibility: visible; }
-    .logout-button {
-      appearance: none;
-      padding: 7px 13px;
       border: 1px solid #3a4c62;
       border-radius: 8px;
       background: transparent;
       color: var(--muted);
+      cursor: pointer;
+      transition: color .15s ease, border-color .15s ease;
+    }
+    .menu-button:hover, .menu-button[aria-expanded="true"] { color: var(--text); border-color: #52718f; }
+    .menu-button:focus-visible { outline: 2px solid var(--blue-light); outline-offset: 2px; }
+    .menu-liste {
+      position: absolute;
+      top: calc(100% + 4px);
+      right: 0;
+      z-index: 20;
+      min-width: 160px;
+      padding: 6px;
+      border: 1px solid var(--line);
+      border-radius: 11px;
+      background: var(--panel-2);
+      box-shadow: 0 14px 40px rgba(0,0,0,.45);
+    }
+    .menu-item {
+      appearance: none;
+      display: block;
+      width: 100%;
+      padding: 10px 12px;
+      border: 0;
+      border-radius: 7px;
+      background: transparent;
+      color: var(--text);
       font: inherit;
-      font-size: 13px;
-      font-weight: 650;
-      letter-spacing: 0;
+      font-size: 14px;
+      font-weight: 600;
+      text-align: left;
       cursor: pointer;
     }
-    .logout-button:hover { color: var(--text); border-color: #52718f; }
+    .menu-item:hover, .menu-item:focus-visible { background: rgba(86,183,255,.12); outline: none; }
+    .menu-version { padding: 8px 12px 4px; color: #66788d; font-size: 12px; font-weight: 400; letter-spacing: 0; white-space: nowrap; }
+    .menu-item:not([hidden]) ~ .menu-version { margin-top: 6px; border-top: 1px solid var(--line); padding-top: 10px; }
     .login-view { max-width: 420px; margin: 20px auto 0; }
     .login-view .form-row { grid-template-columns: 1fr; gap: 7px; }
     .login-view .save-row { margin-top: 20px; }
@@ -616,11 +608,13 @@
   <header class="topbar">
     <div class="topbar-inner">
       <div class="brand"><span class="brand-mark">TD</span><span>TOP DRIVES</span><span class="brand-accent">STATISTIK</span><div class="brand-tools">
-          <button id="logout-button" class="logout-button" type="button" hidden>Abmelden</button>
-          <button class="info-badge" type="button" aria-label="Info" aria-describedby="info-bubble">
-            <svg viewBox="0 0 12 12" width="12" height="12" aria-hidden="true"><circle cx="6" cy="3.4" r="0.65" fill="currentColor"/><path d="M6 5.2V8.6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" fill="none"/></svg>
-            <span class="info-bubble" id="info-bubble" role="tooltip"><strong>Top Drives Statistik</strong><br>Version: 1.01 (17.10.2026)</span>
+          <button id="menu-button" class="menu-button" type="button" aria-label="Menü" aria-haspopup="menu" aria-expanded="false" aria-controls="menu-liste">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
           </button>
+          <div id="menu-liste" class="menu-liste" role="menu" hidden>
+            <button id="logout-button" class="menu-item" type="button" role="menuitem" hidden>Abmelden</button>
+            <div class="menu-version" role="presentation">Version 1.02 (17.10.2026)</div>
+          </div>
         </div>
       </div>
       <nav id="haupt-nav" aria-label="Hauptnavigation" role="tablist" hidden>
@@ -855,6 +849,20 @@
         <div class="stat-card large"><span class="stat-label">Prognose nächster (Tag im Spiel)</span><span class="stat-value" id="kachel-leg-prognose">–</span></div>
       </div>
 
+      <div class="chart-card">
+        <div class="chart-head"><span class="chart-title">Zeitstrahl (Tag im Spiel)</span></div>
+        <div id="leg-zeitstrahl" class="chart-area" role="img" aria-label="Zeitstrahl der hinzugekommenen Legendaries"></div>
+        <div class="chart-legend">
+          <span class="legend-item"><i class="auto-legende" style="color:var(--blue-light)"></i>Neu</span>
+          <span class="legend-item"><i class="auto-legende" style="color:#66788d"></i>Dublette</span>
+        </div>
+      </div>
+
+      <div class="chart-card">
+        <div class="chart-head"><span class="chart-title">Verteilung (RQ)</span></div>
+        <div id="leg-verteilung" class="chart-area"></div>
+      </div>
+
       <div class="table-wrap">
         <table class="data-table">
           <thead>
@@ -875,6 +883,7 @@
 
     <section id="page-weiteres" class="page" hidden>
       <p class="link-line"><a href="https://www.topdrivesrecords.com/c" target="_blank" rel="noopener noreferrer">Cheatsheet</a></p>
+      <p class="link-line"><a href="https://www.reddit.com/r/TopDrives/" target="_blank" rel="noopener noreferrer">reddit Top Drives</a></p>
       <p class="link-line"><a href="https://store.topdrives.io/de-DE" target="_blank" rel="noopener noreferrer">Hutch Webstore</a></p>
     </section>
 
@@ -1000,7 +1009,10 @@
           if (typeof ladeGarage === 'function') ladeGarage();
         }
         if (selected === 'gold' && typeof ladeGold === 'function') ladeGold();
-        if (selected === 'legendaries' && typeof ladeLegendaries === 'function') ladeLegendaries();
+        if (selected === 'legendaries') {
+          if (typeof zeichneLegendaryZeitstrahl === 'function') zeichneLegendaryZeitstrahl();
+          if (typeof ladeLegendaries === 'function') ladeLegendaries();
+        }
         if (selected === 'notizen' && typeof ladeNotizen === 'function') ladeNotizen();
       });
     });
@@ -1203,7 +1215,27 @@
       }
     });
 
-    logoutButton.addEventListener('click', () => { if (db) db.auth.signOut(); });
+    // --- Menü (Über, Abmelden) ---
+    const menuButton = document.getElementById('menu-button');
+    const menuListe = document.getElementById('menu-liste');
+
+    function setzeMenu(offen) {
+      menuListe.hidden = !offen;
+      menuButton.setAttribute('aria-expanded', String(offen));
+    }
+
+    menuButton.addEventListener('click', () => setzeMenu(menuListe.hidden));
+    document.addEventListener('click', (event) => {
+      if (!menuListe.hidden && !event.target.closest('.brand-tools')) setzeMenu(false);
+    });
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape' && !menuListe.hidden) { setzeMenu(false); menuButton.focus(); }
+    });
+
+    logoutButton.addEventListener('click', () => {
+      setzeMenu(false);
+      if (db) db.auth.signOut();
+    });
 
     // --- Gold: Daten laden und anzeigen ---
     let goldDaten = [];
@@ -1544,6 +1576,91 @@
       return legendaryDaten.filter((eintrag) => eintrag.besitzer === besitzer);
     }
 
+    // Zeitstrahl: ein Punkt pro Legendary auf der Achse "Tag im Spiel"; gleiche Tage werden übereinander gestapelt
+    // Auto-Symbol (Sportwagen, Seitenansicht) in einem Raster von 32 × 16
+    const AUTO_BREITE = 32;
+    const AUTO_SYMBOL =
+      '<path d="M2 11 L2 9 L8 7.5 L12 4.5 L21 4.5 L26 7.5 L30 8.5 L30 11 Z" fill="currentColor"/>' +
+      '<path d="M12.8 5.4 L20.4 5.4 L24 7.4 L9.6 7.4 Z" fill="#151f2d" opacity=".75"/>' +
+      '<circle cx="9" cy="11.3" r="2.6" fill="#151f2d" stroke="currentColor" stroke-width="1.2"/>' +
+      '<circle cx="23" cy="11.3" r="2.6" fill="#151f2d" stroke="currentColor" stroke-width="1.2"/>';
+    document.querySelectorAll('.auto-legende').forEach((el) => {
+      el.innerHTML = `<svg viewBox="0 0 32 16" width="28" height="14" aria-hidden="true">${AUTO_SYMBOL}</svg>`;
+    });
+    let zeitstrahlZeilen = [];
+    let zeitstrahlDubletten = new Set();
+
+    function zeichneLegendaryZeitstrahl() {
+      const box = document.getElementById('leg-zeitstrahl');
+      const breite = box.clientWidth;
+      if (!breite) return; // Tab ist gerade nicht sichtbar
+      if (!zeitstrahlZeilen.length) {
+        box.innerHTML = '<p class="chart-empty">Noch keine Daten</p>';
+        return;
+      }
+
+      const tage = zeitstrahlZeilen.map((e) => e.tag_im_spiel);
+      const tMax = Math.max(...tage, 1);
+      const m = { l: 20, r: 20, t: 14, b: 28 };
+      const abstand = 18;
+
+      // Pro Tag stapeln (älteste Einträge zuerst, damit Originale unten liegen)
+      const stapel = new Map();
+      const punkte = [...zeitstrahlZeilen].sort((a, b) => (a.tag_im_spiel - b.tag_im_spiel) || (a.id - b.id)).map((e) => {
+        const n = stapel.get(e.tag_im_spiel) || 0;
+        stapel.set(e.tag_im_spiel, n + 1);
+        return { eintrag: e, ebene: n };
+      });
+      // Feste Höhe für höchstens zwei Fahrzeuge pro Tag, damit die Karte beim Wechsel des Besitzers nicht springt
+      const hoehe = m.t + m.b + 12 + 2 * abstand;
+      const achseY = hoehe - m.b;
+      const x = (t) => m.l + (t / tMax) * (breite - m.l - m.r);
+
+      let svg = `<svg viewBox="0 0 ${breite} ${hoehe}" width="${breite}" height="${hoehe}" xmlns="http://www.w3.org/2000/svg">`;
+      svg += `<line x1="${m.l}" x2="${breite - m.r}" y1="${achseY}" y2="${achseY}" stroke="#3a4c62" stroke-width="2"/>`;
+
+      // Beschriftung der Achse in gleichmäßigen Schritten
+      const roh = tMax / (breite < 560 ? 4 : 8);
+      const basis = Math.pow(10, Math.floor(Math.log10(roh)));
+      const schritt = [1, 2, 5, 10].map((f) => f * basis).find((s) => s >= roh) || basis * 10;
+      for (let t = 0; t <= tMax; t += schritt) {
+        svg += `<line x1="${x(t)}" x2="${x(t)}" y1="${achseY}" y2="${achseY + 5}" stroke="#3a4c62" stroke-width="1"/>`;
+        svg += `<text x="${x(t)}" y="${hoehe - 8}" text-anchor="middle" font-size="11" fill="#9eafc3">${t}</text>`;
+      }
+
+      punkte.forEach(({ eintrag, ebene }) => {
+        const farbe = zeitstrahlDubletten.has(eintrag.id) ? '#66788d' : 'var(--blue-light)';
+        const tx = x(eintrag.tag_im_spiel) - AUTO_BREITE / 2;
+        const ty = achseY - 13.9 * (AUTO_BREITE / 32) - 1.5 - ebene * abstand;
+        svg += `<g transform="translate(${tx.toFixed(1)},${ty}) scale(${AUTO_BREITE / 32})" color="${farbe}"><rect x="0" y="0" width="32" height="16" fill="transparent"/>${AUTO_SYMBOL}<title>Tag ${eintrag.tag_im_spiel}</title></g>`;
+      });
+      svg += '</svg>';
+      box.innerHTML = svg;
+    }
+    window.addEventListener('resize', zeichneLegendaryZeitstrahl);
+
+    // Verteilung nach einzelnen RQ-Werten des gewählten Besitzers (nur vorhandene Werte)
+    function zeichneLegendaryVerteilung(zeilen) {
+      const box = document.getElementById('leg-verteilung');
+      const anzahl = new Map();
+      zeilen.forEach((e) => anzahl.set(e.rq, (anzahl.get(e.rq) || 0) + 1));
+      if (!anzahl.size) {
+        box.innerHTML = '<p class="chart-empty">Noch keine Daten</p>';
+        return;
+      }
+      const werte = [...anzahl.keys()].sort((a, b) => b - a);
+      const hoechst = Math.max(...anzahl.values());
+
+      let html = '';
+      for (const rq of werte) {
+        const n = anzahl.get(rq);
+        html += `<div class="verteilung-row"><span class="verteilung-label">${rq}</span>` +
+          `<span class="verteilung-bar"><i style="width:${(n / hoechst) * 100}%"></i></span>` +
+          `<span class="verteilung-count">${n}</span></div>`;
+      }
+      box.innerHTML = html;
+    }
+
     function zeichneLegendaries() {
       const zeilen = legendaryFenster();
 
@@ -1563,6 +1680,11 @@
       setzeKachel('kachel-leg-einzigartig', anzahl ? anzahl - dubletten.size : NaN, ganzzahl);
       setzeKachel('kachel-leg-tage', tageProLegendary, dezimal1);
       setzeKachel('kachel-leg-prognose', juengsterTag + tageProLegendary, ganzzahl);
+
+      zeitstrahlZeilen = zeilen;
+      zeitstrahlDubletten = dubletten;
+      zeichneLegendaryZeitstrahl();
+      zeichneLegendaryVerteilung(zeilen);
 
       if (!zeilen.length) { tabellenHinweis(legendaryTabelle, 5, 'Noch keine Daten'); return; }
 
