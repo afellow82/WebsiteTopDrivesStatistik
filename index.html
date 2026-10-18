@@ -479,6 +479,18 @@
     .dialog-label { display: block; margin-bottom: 7px; font-size: 14px; font-weight: 650; color: #dce6f1; }
     /* Dubletten: spätere Einträge desselben Fahrzeugs werden grau dargestellt */
     #legendaries-tabelle tr.dublette td:not(:last-child) { color: #66788d; }
+    /* Sortierbare Spaltenköpfe */
+    th.sortierbar { cursor: pointer; user-select: none; }
+    th.sortierbar:hover { color: var(--text); }
+    th.sortierbar:focus-visible { outline: 2px solid var(--blue-light); outline-offset: -2px; }
+    th.sortierbar[aria-sort="ascending"]::after { content: " ▲"; font-size: 9px; color: var(--blue-light); }
+    th.sortierbar[aria-sort="descending"]::after { content: " ▼"; font-size: 9px; color: var(--blue-light); }
+    /* Zeitstrahl: Autos sind anklickbar und springen zur Tabellenzeile, die dann kurz aufleuchtet */
+    .zeitstrahl-auto { cursor: pointer; outline: none; }
+    .zeitstrahl-auto:hover, .zeitstrahl-auto:focus-visible { filter: brightness(1.35) drop-shadow(0 0 3px currentColor); }
+    #legendaries-tabelle tr { scroll-margin-top: 150px; }
+    #legendaries-tabelle tr.markiert td { animation: zeilenblitz 2s ease-out; }
+    @keyframes zeilenblitz { 0%, 35% { background: rgba(86,183,255,.28); } 100% { background: transparent; } }
     .dialog-field { margin-bottom: 14px; }
     .dialog-field .dialog-label { margin-bottom: 7px; }
     #page-legendaries .data-table td { white-space: normal; }
@@ -942,10 +954,10 @@
         <table class="data-table">
           <thead>
             <tr>
-              <th scope="col">Fahrzeug</th>
-              <th scope="col">RQ</th>
-              <th scope="col">Tag im Spiel</th>
-              <th scope="col">Quelle</th>
+              <th scope="col" class="sortierbar" data-sort="fahrzeug" tabindex="0">Fahrzeug</th>
+              <th scope="col" class="sortierbar" data-sort="rq" tabindex="0">RQ</th>
+              <th scope="col" class="sortierbar" data-sort="tag_im_spiel" tabindex="0">Tag im Spiel</th>
+              <th scope="col" class="sortierbar" data-sort="quelle" tabindex="0">Quelle</th>
               <th scope="col" class="col-actions"><span class="sr-only">Aktionen</span></th>
             </tr>
           </thead>
@@ -1107,6 +1119,9 @@
           if (typeof ladeGold === 'function') ladeGold();
         }
         if (selected === 'legendaries') {
+          // Beim Öffnen immer Standardsortierung (Tag im Spiel absteigend)
+          legendarySortierung = { ...LEGENDARY_STANDARD_SORTIERUNG };
+          if (typeof zeichneLegendaries === 'function') zeichneLegendaries();
           if (typeof zeichneLegendaryZeitstrahl === 'function') zeichneLegendaryZeitstrahl();
           if (typeof ladeLegendaries === 'function') ladeLegendaries();
         }
@@ -1274,7 +1289,7 @@
     });
 
     // Programmversion – bei jeder neuen Version hier anpassen (Menü und Notizen übernehmen sie)
-    const APP_VERSION = '1.07';
+    const APP_VERSION = '1.08';
     const APP_VERSION_DATUM = '18.10.2026';
     document.getElementById('menu-version').textContent = `Version ${APP_VERSION} (${APP_VERSION_DATUM})`;
 
@@ -1820,11 +1835,31 @@
         const farbe = zeitstrahlDubletten.has(eintrag.id) ? '#66788d' : 'var(--blue-light)';
         const tx = x(eintrag.tag_im_spiel) - AUTO_BREITE / 2;
         const ty = achseY - 13.9 * (AUTO_BREITE / 32) - 1.5 - ebene * abstand;
-        svg += `<g transform="translate(${tx.toFixed(1)},${ty}) scale(${AUTO_BREITE / 32})" color="${farbe}"><rect x="0" y="0" width="32" height="16" fill="transparent"/>${AUTO_SYMBOL}<title>Tag ${eintrag.tag_im_spiel}</title></g>`;
+        const name = String(eintrag.fahrzeug).replace(/[&<>"]/g, (z) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[z]));
+        const hinweis = `${name} · RQ ${eintrag.rq} · Tag ${eintrag.tag_im_spiel}` + (zeitstrahlDubletten.has(eintrag.id) ? ' (Dublette)' : '');
+        svg += `<g class="zeitstrahl-auto" data-id="${eintrag.id}" role="button" tabindex="0" aria-label="${hinweis}" transform="translate(${tx.toFixed(1)},${ty}) scale(${AUTO_BREITE / 32})" color="${farbe}"><rect x="0" y="0" width="32" height="16" fill="transparent"/>${AUTO_SYMBOL}<title>${hinweis}</title></g>`;
       });
       svg += '</svg>';
       box.innerHTML = svg;
     }
+
+    // Klick auf ein Auto im Zeitstrahl: zur zugehörigen Tabellenzeile springen und sie kurz hervorheben
+    function springeZuLegendary(auto) {
+      const zeile = [...legendaryTabelle.rows].find((tr) => tr.dataset.id === auto.dataset.id);
+      if (!zeile) return;
+      zeile.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      zeile.classList.remove('markiert');
+      void zeile.offsetWidth; // Animation neu starten
+      zeile.classList.add('markiert');
+    }
+    document.getElementById('leg-zeitstrahl').addEventListener('click', (event) => {
+      const auto = event.target.closest('.zeitstrahl-auto');
+      if (auto) springeZuLegendary(auto);
+    });
+    document.getElementById('leg-zeitstrahl').addEventListener('keydown', (event) => {
+      const auto = event.target.closest('.zeitstrahl-auto');
+      if (auto && (event.key === 'Enter' || event.key === ' ')) { event.preventDefault(); springeZuLegendary(auto); }
+    });
     window.addEventListener('resize', zeichneLegendaryZeitstrahl);
 
     // Verteilung nach einzelnen RQ-Werten des gewählten Besitzers (nur vorhandene Werte)
@@ -1848,6 +1883,25 @@
       }
       box.innerHTML = html;
     }
+
+    // Sortierung der Tabelle; Standard beim Öffnen: Tag im Spiel absteigend (richtung: 1 = aufsteigend, -1 = absteigend)
+    const LEGENDARY_STANDARD_SORTIERUNG = { spalte: 'tag_im_spiel', richtung: -1 };
+    let legendarySortierung = { ...LEGENDARY_STANDARD_SORTIERUNG };
+
+    function sortiereLegendaries(th) {
+      const spalte = th.dataset.sort;
+      legendarySortierung = {
+        spalte,
+        richtung: legendarySortierung.spalte === spalte ? -legendarySortierung.richtung : 1
+      };
+      zeichneLegendaries();
+    }
+    document.querySelectorAll('#page-legendaries th.sortierbar').forEach((th) => {
+      th.addEventListener('click', () => sortiereLegendaries(th));
+      th.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); sortiereLegendaries(th); }
+      });
+    });
 
     function zeichneLegendaries() {
       merkeAuswahl();
@@ -1878,7 +1932,13 @@
       if (!zeilen.length) { tabellenHinweis(legendaryTabelle, 5, 'Noch keine Daten'); return; }
 
       legendaryTabelle.replaceChildren();
-      zeilen.forEach((eintrag) => {
+      const { spalte, richtung } = legendarySortierung;
+      document.querySelectorAll('#page-legendaries th.sortierbar').forEach((th) => {
+        th.setAttribute('aria-sort', th.dataset.sort === spalte ? (richtung > 0 ? 'ascending' : 'descending') : 'none');
+      });
+      const vergleiche = (a, b) => (typeof a[spalte] === 'number' ? a[spalte] - b[spalte] : String(a[spalte] || '').localeCompare(String(b[spalte] || ''), 'de', { sensitivity: 'base' }));
+      const sortiert = [...zeilen].sort((a, b) => richtung * vergleiche(a, b) || (b.tag_im_spiel - a.tag_im_spiel) || (b.id - a.id));
+      sortiert.forEach((eintrag) => {
         const tr = document.createElement('tr');
         tr.dataset.id = eintrag.id;
         if (dubletten.has(eintrag.id)) {
