@@ -360,10 +360,25 @@
     .legend-item { display: inline-flex; align-items: center; gap: 6px; }
     .legend-item i { width: 11px; height: 11px; border-radius: 3px; display: inline-block; }
     @media (max-width: 560px) { .chart-card { padding: 16px 12px 12px; } }
-    .link-line { margin: 0; font-size: 15px; color: var(--text); }
-    .link-line + .link-line { margin-top: 12px; }
-    .link-line a { color: var(--blue-light); text-decoration: underline; text-underline-offset: 3px; }
-    .link-line a:hover { filter: brightness(1.2); }
+    .link-list { display: grid; gap: 12px; }
+    .link-card {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 16px 18px;
+      border: 1px solid var(--line);
+      border-radius: 13px;
+      background: linear-gradient(145deg, rgba(25,37,53,.98), rgba(18,28,41,.98));
+      box-shadow: 0 10px 30px rgba(0,0,0,.14);
+    }
+    .link-copy { flex: 1 1 auto; min-width: 0; }
+    .link-copy strong { display: block; font-size: 15px; margin-bottom: 4px; }
+    .link-copy span { display: block; color: var(--muted); font-size: 13px; line-height: 1.4; }
+    .link-card .save-button { flex: 0 0 auto; min-width: 0; display: inline-flex; align-items: center; justify-content: center; text-decoration: none; }
+    @media (max-width: 560px) {
+      .link-card { flex-direction: column; align-items: stretch; gap: 12px; }
+      .link-card .save-button { width: 100%; }
+    }
     /* ===== Login, Abmelden, Statusmeldungen ===== */
     .brand-tools { position: relative; align-self: stretch; display: flex; align-items: center; margin-left: auto; }
     .menu-button {
@@ -553,17 +568,66 @@
     }
     textarea::placeholder { color: #6f8298; }
     textarea:focus { border-color: var(--blue-light); box-shadow: 0 0 0 3px rgba(86,183,255,.12); }
-    .notiz-form { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 24px; }
+    .notiz-form { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 12px; margin-bottom: 24px; }
+    .notiz-form .choice-group { flex: 0 0 100%; }
     .notiz-form textarea { flex: 1 1 auto; min-width: 0; }
     .add-button { flex: 0 0 auto; min-width: 0; width: 44px; padding: 0; font-size: 24px; line-height: 1; }
     .notiz-form .form-message { margin: 0 0 12px; }
     #page-notizen .data-table td { white-space: pre-wrap; vertical-align: top; text-align: left; }
     #page-notizen .data-table th { text-align: left; }
     #page-notizen .data-table td:first-child { white-space: nowrap; color: var(--muted); }
-    #page-notizen .data-table th.col-actions, #page-notizen .data-table td:last-child { width: 90px; }
+    #page-notizen .data-table td:nth-child(2) { white-space: nowrap; }
+    /* Roter Zähler am Tab „Notizen“ (offene Fehler und Anforderungen) */
+    .tab-badge {
+      display: inline-grid;
+      place-items: center;
+      min-width: 19px;
+      height: 19px;
+      margin-left: 3px;
+      padding: 0 5px;
+      border-radius: 99px;
+      background: #ff3b30;
+      color: #fff;
+      font-size: 11px;
+      font-weight: 800;
+      line-height: 1;
+      position: relative;
+      top: -7px;
+      vertical-align: baseline;
+    }
+    .notiz-legende { margin: 0 0 12px; gap: 8px; }
+    .filter-item {
+      appearance: none;
+      padding: 7px 13px;
+      border: 1px solid #3a4c62;
+      border-radius: 99px;
+      background: transparent;
+      color: var(--muted);
+      font: inherit;
+      font-size: 13px;
+      font-weight: 650;
+      cursor: pointer;
+      transition: border-color .15s ease, background .15s ease, color .15s ease;
+    }
+    .filter-item:hover { border-color: #52718f; color: var(--text); }
+    .filter-item.active { border-color: var(--blue-light); background: rgba(22,140,224,.14); color: var(--text); }
+    .filter-item:focus-visible { outline: 2px solid var(--blue-light); outline-offset: 2px; }
+    .notiz-kategorie { display: inline-grid; place-items: center; width: 34px; height: 34px; font-size: 28px; line-height: 1; cursor: default; }
+    /* Feste Spaltenbreiten, damit sich die Tabelle beim Filtern nicht verschiebt */
+    #page-notizen .data-table { table-layout: fixed; }
+    #page-notizen .data-table th:nth-child(1) { width: 120px; }
+    #page-notizen .data-table th:nth-child(2) { width: 74px; }
+    #page-notizen .icon-button { flex-shrink: 0; }
+    @media (max-width: 560px) { #page-notizen .data-table { min-width: 480px; } }
+    #dialog-notiz .dialog-field { margin-bottom: 14px; }
+    #notiz-kategorie .choice-tile, #notiz-aendern-kategorie .choice-tile { padding: 0 8px; }
+    #page-notizen .data-table th.col-actions, #page-notizen .data-table td:last-child { width: 112px; }
     #page-notizen .data-table td:last-child { white-space: nowrap; }
     #page-notizen .data-table td { overflow-wrap: anywhere; }
-    @media (max-width: 560px) { .notiz-form { gap: 8px; } }
+    @media (max-width: 560px) {
+      .notiz-form { gap: 8px; }
+      #notiz-kategorie .choice-tile, #notiz-aendern-kategorie .choice-tile { font-size: 12px; padding: 0 4px; }
+    }
     .save-row {
       display: flex;
       justify-content: flex-end;
@@ -614,7 +678,7 @@
           </button>
           <div id="menu-liste" class="menu-liste" role="menu" hidden>
             <button id="logout-button" class="menu-item" type="button" role="menuitem" hidden>Abmelden</button>
-            <div class="menu-version" role="presentation">Version 1.04 (17.10.2026)</div>
+            <div class="menu-version" id="menu-version" role="presentation"></div>
           </div>
         </div>
       </div>
@@ -623,8 +687,8 @@
         <button class="tab" type="button" data-tab="gold" role="tab" aria-selected="false">Gold</button>
         <button class="tab" type="button" data-tab="garage" role="tab" aria-selected="false">Garage</button>
         <button class="tab" type="button" data-tab="legendaries" role="tab" aria-selected="false">Legendaries</button>
-        <button class="tab" type="button" data-tab="weiteres" role="tab" aria-selected="false">Weiteres</button>
-        <button class="tab" type="button" data-tab="notizen" role="tab" aria-selected="false">Notizen</button>
+        <button class="tab" type="button" data-tab="weiteres" role="tab" aria-selected="false">Links</button>
+        <button class="tab" type="button" data-tab="notizen" role="tab" aria-selected="false">Notizen<span class="tab-badge" id="notizen-badge" hidden></span></button>
       </nav>
     </div>
   </header>
@@ -893,30 +957,45 @@
     </section>
 
     <section id="page-weiteres" class="page" hidden>
-      <p class="link-line"><a href="https://www.topdrivesrecords.com/c" target="_blank" rel="noopener noreferrer">Cheatsheet</a></p>
-      <p class="link-line"><a href="https://www.reddit.com/r/TopDrives/" target="_blank" rel="noopener noreferrer">reddit Top Drives</a></p>
-      <p class="link-line"><a href="https://store.topdrives.io/de-DE" target="_blank" rel="noopener noreferrer">Hutch Webstore</a></p>
+      <div class="link-list">
+        <div class="link-card">
+          <div class="link-copy"><strong>Cheatsheet</strong><span>Fahrzeugdaten und Übersichten auf Top Drives Records</span></div>
+          <a class="save-button" href="https://www.topdrivesrecords.com/c" target="_blank" rel="noopener noreferrer" aria-label="Cheatsheet öffnen (neuer Tab)">Öffnen ↗</a>
+        </div>
+        <div class="link-card">
+          <div class="link-copy"><strong>reddit Top Drives</strong><span>Community, Neuigkeiten und Tipps zum Spiel</span></div>
+          <a class="save-button" href="https://www.reddit.com/r/TopDrives/" target="_blank" rel="noopener noreferrer" aria-label="reddit Top Drives öffnen (neuer Tab)">Öffnen ↗</a>
+        </div>
+        <div class="link-card">
+          <div class="link-copy"><strong>Hutch Webstore</strong><span>Offizieller Shop des Spiels</span></div>
+          <a class="save-button" href="https://store.topdrives.io/de-DE" target="_blank" rel="noopener noreferrer" aria-label="Hutch Webstore öffnen (neuer Tab)">Öffnen ↗</a>
+        </div>
+      </div>
     </section>
 
     <section id="page-notizen" class="page" hidden>
       <form class="notiz-form" id="notiz-form" novalidate>
+        <div class="choice-group" id="notiz-kategorie" role="group" aria-label="Kategorie auswählen"></div>
         <label for="notiz-eingabe" class="sr-only">Neue Notiz</label>
         <textarea id="notiz-eingabe" placeholder="Neue Notiz …" rows="3"></textarea>
         <button id="notiz-hinzufuegen" class="save-button add-button" type="submit" title="Notiz hinzufügen" aria-label="Notiz hinzufügen">+</button>
       </form>
       <p class="form-message" id="notiz-meldung" role="status"></p>
 
+      <div class="chart-legend notiz-legende" id="notiz-legende" aria-label="Legende der Kategorien"></div>
+
       <div class="table-wrap">
         <table class="data-table">
           <thead>
             <tr>
               <th scope="col">Datum</th>
+              <th scope="col">Kategorie</th>
               <th scope="col">Notiz</th>
               <th scope="col" class="col-actions"><span class="sr-only">Aktionen</span></th>
             </tr>
           </thead>
           <tbody id="notizen-tabelle">
-            <tr><td class="table-empty" colspan="3">Noch keine Daten</td></tr>
+            <tr><td class="table-empty" colspan="4">Noch keine Daten</td></tr>
           </tbody>
         </table>
       </div>
@@ -985,6 +1064,10 @@
   <dialog id="dialog-notiz" class="dialog" aria-labelledby="dialog-notiz-titel">
     <form id="notiz-aendern-form" novalidate>
       <h2 id="dialog-notiz-titel" class="dialog-title">Notiz ändern</h2>
+      <div class="dialog-field">
+        <span class="dialog-label" id="notiz-aendern-kategorie-label">Kategorie</span>
+        <div class="choice-group" id="notiz-aendern-kategorie" role="group" aria-labelledby="notiz-aendern-kategorie-label"></div>
+      </div>
       <label for="notiz-aendern-text" class="sr-only">Notiz</label>
       <textarea id="notiz-aendern-text" rows="6" placeholder="Notiz"></textarea>
       <p class="form-message" id="dialog-notiz-meldung" role="status"></p>
@@ -1164,6 +1247,19 @@
       }
     });
 
+    // Notizen: Kategorien – hier zentral erweiterbar (Reihenfolge = Reihenfolge der Kacheln)
+    const NOTIZ_KATEGORIEN = ['Anforderung', 'Fehler', 'Spielstrategie'];
+    // Emojis der Kategorien (nur in der Tabelle)
+    const NOTIZ_EMOJIS = { 'Anforderung': '📋', 'Fehler': '❌', 'Spielstrategie': '🚗' };
+    // Legende dient zugleich als Filter der Notiz-Tabelle („Alle“ zuerst)
+    document.getElementById('notiz-legende').innerHTML = ['Alle', ...NOTIZ_KATEGORIEN]
+      .map((name, i) => `<button type="button" class="filter-item${i === 0 ? ' active' : ''}" data-value="${i === 0 ? '' : name}" aria-pressed="${i === 0}">${NOTIZ_EMOJIS[name] || ''} ${name}</button>`).join('');
+    ['notiz-kategorie', 'notiz-aendern-kategorie'].forEach((id) => {
+      document.getElementById(id).innerHTML = NOTIZ_KATEGORIEN.map((name, i) =>
+        `<button class="choice-tile${i === 0 ? ' active' : ''}" type="button" data-value="${name}" aria-pressed="${i === 0}">${name}</button>`
+      ).join('');
+    });
+
     // Auswahlkacheln in Formularen (Garage: Auswahl, Legendaries: Besitzer)
     document.querySelectorAll('.choice-group').forEach((gruppe) => {
       gruppe.addEventListener('click', (event) => {
@@ -1176,6 +1272,11 @@
         });
       });
     });
+
+    // Programmversion – bei jeder neuen Version hier anpassen (Menü und Notizen übernehmen sie)
+    const APP_VERSION = '1.07';
+    const APP_VERSION_DATUM = '18.10.2026';
+    document.getElementById('menu-version').textContent = `Version ${APP_VERSION} (${APP_VERSION_DATUM})`;
 
     // ===== Supabase: Anmeldung, Speichern, Laden =====
     const SUPABASE_URL = 'https://gxvxwvboqqzuljpluzhj.supabase.co';
@@ -1423,7 +1524,7 @@
         gruppe.className = 'row-actions';
         gruppe.innerHTML =
           '<button type="button" class="icon-button" data-aktion="genutzt" title="Genutztes Gold eintragen" aria-label="Genutztes Gold eintragen">' +
-            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M8 12h8"/></svg>' +
+            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="10" cy="9" r="6.5"/><path d="M10 6v6"/><path d="M18 14v7"/><path d="M15 18l3 3 3-3"/></svg>' +
           '</button>' +
           '<button type="button" class="icon-button danger" data-aktion="loeschen" title="Eintrag löschen" aria-label="Eintrag löschen">' +
             '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M6 6l1 14h10l1-14"/><path d="M10 11v6M14 11v6"/></svg>' +
@@ -1893,15 +1994,55 @@
     const notizSpeichern = document.getElementById('notiz-speichern');
     const datumFormat = new Intl.DateTimeFormat('de-DE', { timeZone: 'Europe/Berlin', day: '2-digit', month: '2-digit', year: 'numeric' });
 
+    let notizFilter = ''; // leer = alle Kategorien
+
+    document.getElementById('notiz-legende').addEventListener('click', (event) => {
+      const knopf = event.target.closest('.filter-item');
+      if (!knopf) return;
+      notizFilter = knopf.dataset.value;
+      document.querySelectorAll('#notiz-legende .filter-item').forEach((item) => {
+        item.classList.toggle('active', item === knopf);
+        item.setAttribute('aria-pressed', String(item === knopf));
+      });
+      zeichneNotizen();
+    });
+
+    // Zähler am Tab: nur Fehler und Anforderungen; bei 0 wird er ausgeblendet
+    function aktualisiereNotizBadge() {
+      const badge = document.getElementById('notizen-badge');
+      const anzahl = notizDaten.filter((e) => e.kategorie === 'Fehler' || e.kategorie === 'Anforderung').length;
+      badge.hidden = anzahl === 0;
+      badge.textContent = anzahl > 99 ? '99+' : String(anzahl);
+      badge.setAttribute('aria-label', `${anzahl} Fehler und Anforderungen`);
+    }
+
     function zeichneNotizen() {
-      if (!notizDaten.length) { tabellenHinweis(notizTabelle, 3, 'Noch keine Daten'); return; }
+      aktualisiereNotizBadge();
+      if (!notizDaten.length) { tabellenHinweis(notizTabelle, 4, 'Noch keine Daten'); return; }
+      const sichtbar = notizFilter ? notizDaten.filter((e) => e.kategorie === notizFilter) : notizDaten;
+      if (!sichtbar.length) { tabellenHinweis(notizTabelle, 4, 'Keine Notizen in dieser Kategorie'); return; }
       notizTabelle.replaceChildren();
-      notizDaten.forEach((eintrag) => {
+      sichtbar.forEach((eintrag) => {
         const tr = document.createElement('tr');
         tr.dataset.id = eintrag.id;
-        [datumFormat.format(new Date(eintrag.zeitpunkt)), eintrag.text].forEach((text) => {
+        [datumFormat.format(new Date(eintrag.zeitpunkt)), eintrag.kategorie, eintrag.text].forEach((text, i) => {
           const td = document.createElement('td');
-          td.textContent = text;
+          if (i === 1) {
+            // Kategorie als kleines Etikett; Altbestand ohne Kategorie zeigt „–“
+            if (text) {
+              const marke = document.createElement('span');
+              marke.className = 'notiz-kategorie';
+              marke.textContent = NOTIZ_EMOJIS[text] || text;
+              marke.title = text;
+              marke.setAttribute('aria-label', text);
+              td.appendChild(marke);
+            } else {
+              td.textContent = '–';
+              td.style.color = 'var(--muted)';
+            }
+          } else {
+            td.textContent = text;
+          }
           tr.appendChild(td);
         });
         const aktionen = document.createElement('td');
@@ -1918,11 +2059,11 @@
     async function ladeNotizen() {
       if (!db) return;
       const { data, error } = await db.from('notizen')
-        .select('id, zeitpunkt, text')
+        .select('id, zeitpunkt, kategorie, text')
         .order('zeitpunkt', { ascending: false })
         .order('id', { ascending: false });
       if (error) {
-        tabellenHinweis(notizTabelle, 3, 'Daten konnten nicht geladen werden.');
+        tabellenHinweis(notizTabelle, 4, 'Daten konnten nicht geladen werden.');
         return;
       }
       notizDaten = data;
@@ -1934,7 +2075,12 @@
       const text = notizEingabe.value.trim();
       if (!text) { zeigeMeldung(notizMeldung, 'Bitte eine Notiz eingeben.', 'error'); return; }
       notizHinzufuegen.disabled = true;
-      const { error } = await db.from('notizen').insert({ text });
+      const kategorie = document.querySelector('#notiz-kategorie .choice-tile.active').dataset.value;
+      // Fehler und Anforderungen bekommen Programmversion und heutiges Datum angehängt
+      const mitVersion = (kategorie === 'Fehler' || kategorie === 'Anforderung')
+        ? `${text} [Version ${APP_VERSION}, ${datumFormat.format(new Date())}]`
+        : text;
+      const { error } = await db.from('notizen').insert({ text: mitVersion, kategorie });
       notizHinzufuegen.disabled = false;
       if (error) { zeigeMeldung(notizMeldung, 'Speichern fehlgeschlagen. Bitte erneut versuchen.', 'error'); return; }
       notizEingabe.value = '';
@@ -1958,6 +2104,8 @@
         dialogLoeschen.showModal();
       } else {
         notizAendernText.value = eintrag.text;
+        // Altbestand ohne Kategorie: keine Kachel vorausgewählt, bis eine gewählt wird
+        waehleKachel('notiz-aendern-kategorie', eintrag.kategorie);
         zeigeMeldung(notizAendernMeldung, '');
         notizSpeichern.disabled = false;
         dialogNotiz.showModal();
@@ -1972,8 +2120,10 @@
       if (!aktuellerEintrag) return;
       const text = notizAendernText.value.trim();
       if (!text) { zeigeMeldung(notizAendernMeldung, 'Bitte eine Notiz eingeben.', 'error'); return; }
+      const aktiveKategorie = document.querySelector('#notiz-aendern-kategorie .choice-tile.active');
+      if (!aktiveKategorie) { zeigeMeldung(notizAendernMeldung, 'Bitte eine Kategorie wählen.', 'error'); return; }
       notizSpeichern.disabled = true;
-      const { data, error } = await db.from('notizen').update({ text }).eq('id', aktuellerEintrag.id).select('id');
+      const { data, error } = await db.from('notizen').update({ text, kategorie: aktiveKategorie.dataset.value }).eq('id', aktuellerEintrag.id).select('id');
       if (error || !data || !data.length) {
         notizSpeichern.disabled = false;
         zeigeMeldung(notizAendernMeldung, 'Speichern fehlgeschlagen. Bitte erneut versuchen.', 'error');
