@@ -479,6 +479,18 @@
     .dialog-label { display: block; margin-bottom: 7px; font-size: 14px; font-weight: 650; color: #dce6f1; }
     /* Dubletten: spätere Einträge desselben Fahrzeugs werden grau dargestellt */
     #legendaries-tabelle tr.dublette td:not(:last-child) { color: #66788d; }
+    /* Einstellungen: Indikatoren im Menü ausblenden */
+    .einstellung-liste { display: grid; gap: 4px; }
+    .einstellung-zeile { display: flex; align-items: center; gap: 12px; padding: 9px 4px; font-size: 14px; font-weight: 650; cursor: pointer; }
+    .einstellung-zeile input { flex: 0 0 auto; width: 20px; height: 20px; padding: 0; accent-color: var(--blue); cursor: pointer; }
+    html[data-badge-aus~="gold"] #gold-badge,
+    html[data-badge-aus~="garage"] #garage-badge,
+    html[data-badge-aus~="legendaries"] #legendaries-badge { display: none !important; }
+    /* Garage: Bezeichnungen reservieren zwei Zeilen, damit die Werte auch bei Umbruch auf gleicher Höhe stehen */
+    #page-garage .stat-label { min-height: 2.7em; }
+    /* Garage: Kreisdiagramm in der Kachel „Verteilung“ */
+    .donut-box { display: grid; place-items: center; }
+    .donut-box svg { display: block; width: 100%; max-width: 92px; height: auto; }
     /* Sortierbare Spaltenköpfe */
     th.sortierbar { cursor: pointer; user-select: none; }
     th.sortierbar:hover { color: var(--text); }
@@ -607,6 +619,7 @@
       top: -7px;
       vertical-align: baseline;
     }
+    .tab-badge.info { background: var(--blue-light); color: #101722; }
     .notiz-legende { margin: 0 0 12px; gap: 8px; }
     .filter-item {
       appearance: none;
@@ -689,6 +702,7 @@
             <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
           </button>
           <div id="menu-liste" class="menu-liste" role="menu" hidden>
+            <button id="einstellungen-button" class="menu-item" type="button" role="menuitem" hidden>Einstellungen</button>
             <button id="logout-button" class="menu-item" type="button" role="menuitem" hidden>Abmelden</button>
             <div class="menu-version" id="menu-version" role="presentation"></div>
           </div>
@@ -696,9 +710,9 @@
       </div>
       <nav id="haupt-nav" aria-label="Hauptnavigation" role="tablist" hidden>
         <button class="tab active" type="button" data-tab="neue-eingabe" role="tab" aria-selected="true">Neue Eingabe</button>
-        <button class="tab" type="button" data-tab="gold" role="tab" aria-selected="false">Gold</button>
-        <button class="tab" type="button" data-tab="garage" role="tab" aria-selected="false">Garage</button>
-        <button class="tab" type="button" data-tab="legendaries" role="tab" aria-selected="false">Legendaries</button>
+        <button class="tab" type="button" data-tab="gold" role="tab" aria-selected="false">Gold<span class="tab-badge info" id="gold-badge" hidden></span></button>
+        <button class="tab" type="button" data-tab="garage" role="tab" aria-selected="false">Garage<span class="tab-badge info" id="garage-badge" hidden></span></button>
+        <button class="tab" type="button" data-tab="legendaries" role="tab" aria-selected="false">Legendaries<span class="tab-badge info" id="legendaries-badge" hidden></span></button>
         <button class="tab" type="button" data-tab="weiteres" role="tab" aria-selected="false">Links</button>
         <button class="tab" type="button" data-tab="notizen" role="tab" aria-selected="false">Notizen<span class="tab-badge" id="notizen-badge" hidden></span></button>
       </nav>
@@ -887,8 +901,9 @@
         <button class="choice-tile" type="button" data-value="Voll verbessert" aria-pressed="false">Voll verbessert</button>
       </div>
 
-      <div class="stat-grid cols-4 spaced">
-        <div class="stat-card large"><span class="stat-label">Gesamt</span><span class="stat-value" id="kachel-garage-gesamt">–</span></div>
+      <div class="stat-grid cols-5">
+        <div class="stat-card large"><span class="stat-label">Anzahl Fahrzeuge</span><span class="stat-value" id="kachel-garage-gesamt">–</span></div>
+        <div class="stat-card large"><span class="stat-label">Verteilung</span><div class="donut-box" id="kachel-garage-verteilung" role="img" aria-label="Kreisdiagramm der Fahrzeugverteilung"><span class="stat-value">–</span></div></div>
         <div class="stat-card large"><span class="stat-label" id="kachel-garage-offen-label">Offene Plätze</span><span class="stat-value" id="kachel-garage-offen">–</span></div>
         <div class="stat-card large"><span class="stat-label">Zuwachs Fahrzeuge pro Tag</span><span class="stat-value" id="kachel-garage-zuwachs">–</span></div>
         <div class="stat-card large"><span class="stat-label" id="kachel-garage-prognose-label">Prognose (Tage)</span><span class="stat-value" id="kachel-garage-prognose">–</span></div>
@@ -1014,6 +1029,19 @@
     </section>
     </div>
   </main>
+
+  <dialog id="dialog-einstellungen" class="dialog" aria-labelledby="dialog-einstellungen-titel">
+    <h2 id="dialog-einstellungen-titel" class="dialog-title">Einstellungen</h2>
+    <p class="dialog-text">Indikatoren im Menü anzeigen:</p>
+    <div class="einstellung-liste">
+      <label class="einstellung-zeile"><input type="checkbox" data-badge="gold" checked>Gold</label>
+      <label class="einstellung-zeile"><input type="checkbox" data-badge="garage" checked>Garage</label>
+      <label class="einstellung-zeile"><input type="checkbox" data-badge="legendaries" checked>Legendaries</label>
+    </div>
+    <div class="dialog-actions">
+      <button type="button" class="btn-secondary" id="einstellungen-schliessen">Schließen</button>
+    </div>
+  </dialog>
 
   <dialog id="dialog-loeschen" class="dialog" aria-labelledby="dialog-loeschen-titel">
     <h2 id="dialog-loeschen-titel" class="dialog-title">Eintrag löschen?</h2>
@@ -1289,7 +1317,7 @@
     });
 
     // Programmversion – bei jeder neuen Version hier anpassen (Menü und Notizen übernehmen sie)
-    const APP_VERSION = '1.08';
+    const APP_VERSION = '1.10';
     const APP_VERSION_DATUM = '18.10.2026';
     document.getElementById('menu-version').textContent = `Version ${APP_VERSION} (${APP_VERSION_DATUM})`;
 
@@ -1303,6 +1331,7 @@
     const appView = document.getElementById('app-view');
     const hauptNav = document.getElementById('haupt-nav');
     const logoutButton = document.getElementById('logout-button');
+    const einstellungenButton = document.getElementById('einstellungen-button');
     const loginForm = document.getElementById('login-form');
     const loginMeldung = document.getElementById('login-meldung');
     const loginButton = document.getElementById('login-button');
@@ -1320,6 +1349,7 @@
       appView.hidden = !angemeldet;
       hauptNav.hidden = !angemeldet;
       logoutButton.hidden = !angemeldet;
+      einstellungenButton.hidden = !angemeldet;
     }
 
     // --- Anmeldung ---
@@ -1363,6 +1393,32 @@
     document.addEventListener('keydown', (event) => {
       if (event.key === 'Escape' && !menuListe.hidden) { setzeMenu(false); menuButton.focus(); }
     });
+
+    // --- Einstellungen: Indikatoren ausblenden (lokal im Browser gespeichert) ---
+    const EINSTELLUNGEN_SCHLUESSEL = 'td-badge-aus';
+    const dialogEinstellungen = document.getElementById('dialog-einstellungen');
+    const badgeHaken = dialogEinstellungen.querySelectorAll('input[data-badge]');
+
+    function wendeBadgeEinstellungenAn(ausgeblendet) {
+      document.documentElement.setAttribute('data-badge-aus', ausgeblendet.join(' '));
+      badgeHaken.forEach((haken) => { haken.checked = !ausgeblendet.includes(haken.dataset.badge); });
+    }
+
+    let gespeichertAus = [];
+    try { gespeichertAus = JSON.parse(localStorage.getItem(EINSTELLUNGEN_SCHLUESSEL)) || []; } catch (e) { /* kein Zugriff: Standard */ }
+    wendeBadgeEinstellungenAn(Array.isArray(gespeichertAus) ? gespeichertAus : []);
+
+    badgeHaken.forEach((haken) => haken.addEventListener('change', () => {
+      const aus = [...badgeHaken].filter((h) => !h.checked).map((h) => h.dataset.badge);
+      wendeBadgeEinstellungenAn(aus);
+      try { localStorage.setItem(EINSTELLUNGEN_SCHLUESSEL, JSON.stringify(aus)); } catch (e) { /* nur nicht dauerhaft */ }
+    }));
+
+    einstellungenButton.addEventListener('click', () => {
+      setzeMenu(false);
+      dialogEinstellungen.showModal();
+    });
+    document.getElementById('einstellungen-schliessen').addEventListener('click', () => dialogEinstellungen.close());
 
     logoutButton.addEventListener('click', () => {
       setzeMenu(false);
@@ -1513,6 +1569,13 @@
 
     function zeichneGoldTabelle() {
       merkeAuswahl();
+      // Zähler am Tab „Gold“: aktueller Stand (neuester Eintrag), ohne Daten ausgeblendet
+      const goldBadge = document.getElementById('gold-badge');
+      goldBadge.hidden = !goldDaten.length;
+      if (goldDaten.length) {
+        goldBadge.textContent = zahlFormat.format(goldDaten[0].stand);
+        goldBadge.setAttribute('aria-label', `Aktueller Stand ${zahlFormat.format(goldDaten[0].stand)} Gold`);
+      }
       berechneGoldKennzahlen();
       zeichneGoldChart();
       if (!goldDaten.length) { tabellenHinweis(goldTabelle, 4, 'Noch keine Daten'); return; }
@@ -1580,12 +1643,42 @@
       return garageDaten.filter((eintrag) => eintrag.voll_verbessert === vollVerbessert);
     }
 
+    // Kreisdiagramm: Anteil der Stufen F bis S am neuesten Eintrag (ohne offene Plätze)
+    function zeichneGarageVerteilung(eintrag) {
+      const box = document.getElementById('kachel-garage-verteilung');
+      const serien = GARAGE_SERIEN.filter((s) => s.spalte !== 'offene_plaetze');
+      const gesamt = eintrag ? garageFahrzeuge(eintrag) : 0;
+      if (!gesamt) { box.innerHTML = '<span class="stat-value">–</span>'; return; }
+
+      let versatz = 0;
+      let ringe = '';
+      serien.forEach((serie) => {
+        const n = eintrag[serie.spalte] || 0;
+        if (!n) return;
+        const anteil = (n / gesamt) * 100;
+        ringe += `<circle cx="21" cy="21" r="15.9155" fill="none" style="stroke:${serie.farbe}" stroke-width="8" ` +
+          `stroke-dasharray="${anteil.toFixed(3)} ${(100 - anteil).toFixed(3)}" stroke-dashoffset="${(-versatz).toFixed(3)}" ` +
+          `transform="rotate(-90 21 21)"><title>${serie.name}: ${zahlFormat.format(n)} (${dezimal1.format(anteil)} %)</title></circle>`;
+        versatz += anteil;
+      });
+      box.innerHTML = `<svg viewBox="0 0 42 42" aria-hidden="true">${ringe}</svg>`;
+    }
+
     function zeichneGarage() {
       merkeAuswahl();
+      // Zähler am Tab „Garage“: Anzahl Fahrzeuge des neuesten Eintrags „Alle“ (unabhängig vom Schalter)
+      const garageBadge = document.getElementById('garage-badge');
+      const neuesteAlleBadge = garageDaten.find((e) => !e.voll_verbessert);
+      garageBadge.hidden = !neuesteAlleBadge;
+      if (neuesteAlleBadge) {
+        garageBadge.textContent = zahlFormat.format(garageFahrzeuge(neuesteAlleBadge));
+        garageBadge.setAttribute('aria-label', `${garageBadge.textContent} Fahrzeuge`);
+      }
       const zeilen = garageFenster();
 
       // Kachel "Gesamt": Summe des neuesten Eintrags
       setzeKachel('kachel-garage-gesamt', zeilen.length ? garageFahrzeuge(zeilen[0]) : NaN, ganzzahl);
+      zeichneGarageVerteilung(zeilen.length ? zeilen[0] : null);
 
       // Kachel "Offene Plätze": bei "Voll verbessert" stattdessen "Anteil (%)" der voll verbesserten Fahrzeuge
       const vollAktiv = document.querySelector('#garage-ansicht .choice-tile.active');
@@ -1905,6 +1998,12 @@
 
     function zeichneLegendaries() {
       merkeAuswahl();
+      // Zähler am Tab „Legendaries“: Anzahl gesamt für Jens (unabhängig vom gewählten Besitzer)
+      const legendariesBadge = document.getElementById('legendaries-badge');
+      const anzahlJens = legendaryDaten.filter((e) => e.besitzer === 'Jens').length;
+      legendariesBadge.hidden = anzahlJens === 0;
+      legendariesBadge.textContent = zahlFormat.format(anzahlJens);
+      legendariesBadge.setAttribute('aria-label', `${anzahlJens} Legendaries von Jens`);
       const zeilen = legendaryFenster();
 
       // Dubletten: pro Fahrzeug zählt der älteste Eintrag (nach Tag im Spiel) als Original, alle späteren als Dublette
