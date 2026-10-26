@@ -295,6 +295,7 @@
       box-shadow: 0 10px 30px rgba(0,0,0,.14);
     }
     .stat-label { display: block; color: var(--muted); font-size: 12px; font-weight: 650; line-height: 1.35; margin-bottom: 10px; }
+    .stat-label.stat-date { margin: 10px 0 0; }
     .stat-value { display: block; font-size: clamp(24px, 4vw, 32px); font-weight: 800; letter-spacing: -.02em; color: var(--text); }
     .stat-card.large { padding: 22px 20px; }
     .stat-card.large .stat-value { font-size: clamp(28px, 5vw, 38px); color: var(--blue-light); }
@@ -908,7 +909,13 @@
         <div class="stat-card large"><span class="stat-label">Verteilung</span><div class="donut-box" id="kachel-garage-verteilung" role="img" aria-label="Kreisdiagramm der Fahrzeugverteilung"><span class="stat-value">–</span></div></div>
         <div class="stat-card large"><span class="stat-label" id="kachel-garage-offen-label">Offene Plätze</span><span class="stat-value" id="kachel-garage-offen">–</span></div>
         <div class="stat-card large"><span class="stat-label">Zuwachs Fahrzeuge pro Tag</span><span class="stat-value" id="kachel-garage-zuwachs">–</span></div>
-        <div class="stat-card large"><span class="stat-label" id="kachel-garage-prognose-label">Prognose (Tage)</span><span class="stat-value" id="kachel-garage-prognose">–</span></div>
+        <div class="stat-card large"><span class="stat-label" id="kachel-garage-prognose-label">Prognose (Tage)</span><span class="stat-value" id="kachel-garage-prognose">–</span><span class="stat-label stat-date" id="kachel-garage-prognose-datum">–</span></div>
+      </div>
+
+      <div class="target-row">
+        <label for="garage-ziel">Zielwert</label>
+        <input class="range" id="garage-ziel" type="range" min="100" max="5500" step="100" value="1000">
+        <output class="target-value" id="garage-ziel-anzeige" for="garage-ziel">1000</output>
       </div>
 
       <div class="chart-card">
@@ -1319,8 +1326,8 @@
     });
 
     // Programmversion – bei jeder neuen Version hier anpassen (Menü und Notizen übernehmen sie)
-    const APP_VERSION = '1.11';
-    const APP_VERSION_DATUM = '20.10.2026';
+    const APP_VERSION = '1.12';
+    const APP_VERSION_DATUM = '26.10.2026';
     document.getElementById('menu-version').textContent = `Version ${APP_VERSION} (${APP_VERSION_DATUM})`;
 
     // ===== Supabase: Anmeldung, Speichern, Laden =====
@@ -1666,6 +1673,16 @@
       box.innerHTML = `<svg viewBox="0 0 42 42" aria-hidden="true">${ringe}</svg>`;
     }
 
+    // Garage: Zielwert der Prognose; solange nicht verschoben, gilt der Standardwert
+    const garageZiel = document.getElementById('garage-ziel');
+    const garageZielAnzeige = document.getElementById('garage-ziel-anzeige');
+    const garageZielWerte = { alle: null, voll: null };
+    garageZiel.addEventListener('input', () => {
+      const aktiv = document.querySelector('#garage-ansicht .choice-tile.active');
+      garageZielWerte[aktiv && aktiv.dataset.value === 'Voll verbessert' ? 'voll' : 'alle'] = Number(garageZiel.value);
+      zeichneGarage();
+    });
+
     function zeichneGarage() {
       merkeAuswahl();
       // Zähler am Tab „Garage“: Anzahl Fahrzeuge des neuesten Eintrags „Alle“ (unabhängig vom Schalter)
@@ -1704,16 +1721,29 @@
       }
       setzeKachel('kachel-garage-zuwachs', zuwachs, dezimal2);
 
-      // Prognose: Tage bis zum nächsten vollen Hunderter der Gesamtzahl (ohne offene Plätze)
+      // Prognose: Tage bis zum Zielwert (Regler) ausgehend von der Gesamtzahl (ohne offene Plätze)
       let tageBisZiel = NaN;
       let ziel = null;
       if (zeilen.length) {
         const fahrzeuge = garageFahrzeuge(zeilen[0]);
-        ziel = Math.floor(fahrzeuge / 100) * 100 + 100;
-        if (zuwachs > 0) tageBisZiel = (ziel - fahrzeuge) / zuwachs;
+        // Regler: Minimum = nächster ganzer Hunderter, Standard = nächster ganzer Tausender, Maximum 5500
+        const reglerMin = Math.min(Math.floor(fahrzeuge / 100) * 100 + 100, 5500);
+        const reglerStandard = Math.min(Math.floor(fahrzeuge / 1000) * 1000 + 1000, 5500);
+        garageZiel.min = reglerMin;
+        // Jede Ansicht ("Alle", "Voll verbessert") merkt sich ihren eigenen Reglerwert
+        const gemerkterZiel = garageZielWerte[vollVerbessertGewaehlt ? 'voll' : 'alle'];
+        garageZiel.value = gemerkterZiel === null ? reglerStandard : Math.max(gemerkterZiel, reglerMin);
+        garageZielAnzeige.textContent = garageZiel.value;
+        ziel = Number(garageZiel.value);
+        if (zuwachs > 0) tageBisZiel = Math.max(ziel - fahrzeuge, 0) / zuwachs;
       }
       document.getElementById('kachel-garage-prognose-label').textContent = ziel === null ? 'Prognose (Tage)' : `Prognose ${ziel} (Tage)`;
       setzeKachel('kachel-garage-prognose', tageBisZiel, dezimal1);
+      // Datum: jetzt + errechnete Tage
+      document.getElementById('kachel-garage-prognose-datum').textContent = Number.isFinite(tageBisZiel)
+        ? new Intl.DateTimeFormat('de-DE', { timeZone: 'Europe/Berlin', day: '2-digit', month: '2-digit', year: 'numeric' })
+          .format(new Date(new Date(zeilen[0].zeitpunkt).getTime() + tageBisZiel * 24 * 3600 * 1000))
+        : '–';
 
       // Tabelle
       if (!zeilen.length) { tabellenHinweis(garageTabelle, 11, 'Noch keine Daten'); }
@@ -1723,7 +1753,7 @@
           const tr = document.createElement('tr');
           const werte = [zeitFormat.format(new Date(eintrag.zeitpunkt))]
             .concat(GARAGE_SPALTEN.map((spalte) => zahlFormat.format(eintrag[spalte] || 0)))
-            .concat(zahlFormat.format(garageSumme(eintrag)));
+            .concat(zahlFormat.format(garageFahrzeuge(eintrag)));
           werte.forEach((text) => {
             const td = document.createElement('td');
             td.textContent = text;
@@ -2239,7 +2269,7 @@
       const kategorie = document.querySelector('#notiz-kategorie .choice-tile.active').dataset.value;
       // Fehler und Anforderungen bekommen Programmversion und heutiges Datum angehängt
       const mitVersion = (kategorie === 'Fehler' || kategorie === 'Anforderung')
-        ? `${text} [Version ${APP_VERSION}, ${datumFormat.format(new Date())}]`
+        ? `${text}\n[Version ${APP_VERSION}, ${datumFormat.format(new Date())}]`
         : text;
       const { error } = await db.from('notizen').insert({ text: mitVersion, kategorie });
       notizHinzufuegen.disabled = false;
